@@ -1,0 +1,11 @@
+h1 Signature
+
+= simple_form_for @document do |f|
+  = f.input_field :sign, as: :hidden, class: 'signature_pad_input'
+  .signature_pad
+    .signature_pad_body
+      canvas
+    .signature_pad_footer
+      = f.button :button, 'Clear', type: 'button', class: "btn btn-default signature_pad_clear"
+      = f.button :submit, "Save", class: "btn btn-success signature_pad_save"
+          

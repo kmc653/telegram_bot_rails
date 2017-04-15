@@ -1,0 +1,5 @@
+h1 Signature
+
+- @documents.each do |signature|
+  = image_tag signature.sign
+  p Signed on: #{signature.signed_on}
