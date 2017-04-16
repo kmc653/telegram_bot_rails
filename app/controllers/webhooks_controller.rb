@@ -9,10 +9,9 @@ class WebhooksController < ApplicationController
     Telegram::Bot::Client.run(TOKEN) do |bot|
       if params[:webhook][:callback_query]
         callback_query = params[:webhook][:callback_query]
-        if callback_query[:data] == 'touch'
-          bot.api.editMessageText(chat_id: callback_query[:from][:id],
-                                  message_id: callback_query[:message][:message_id],
-                                  text: "Don't touch me!")
+
+        if callback_query[:data].include? 'arrange'
+          WasherArrangement.new(callback_query[:from][:id], callback_query[:message][:message_id], callback_query[:data]).arrange
         else
           bot.api.editMessageText(chat_id: callback_query[:from][:id],
                                   message_id: callback_query[:message][:message_id],
@@ -30,7 +29,7 @@ class WebhooksController < ApplicationController
             redis = Redis::Namespace.new("washer_state", redis: Redis.new)
             redis.hset "washer_state:#{message[:chat][:id]}", "step", "預約接單"
 
-            markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: generate_date_btn(date_list, list))
+            markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: generate_date_btn('arrange', date_list, list))
 
             bot.api.sendMessage(chat_id: message[:chat][:id], text: date_msg(list), reply_markup: markup)
           else
@@ -115,7 +114,7 @@ class WebhooksController < ApplicationController
       list
     end
 
-    def generate_date_btn(list, capacity_list)
+    def generate_date_btn(prefix, list, capacity_list)
       date_list = []
       capacities = create_schedule_date_list(capacity_list)
 
@@ -124,7 +123,8 @@ class WebhooksController < ApplicationController
         text_content = dateTime.strftime("%Y-%m-%d")
         unless capacities.include?(text_content)
           text_content += get_day(dateTime.wday)
-          date_list << Telegram::Bot::Types::InlineKeyboardButton.new(text: text_content, callback_data: dateTime.strftime("%Y-%m-%d"))
+          data_string = prefix + '_' + dateTime.strftime("%Y-%m-%d")
+          date_list << Telegram::Bot::Types::InlineKeyboardButton.new(text: text_content, callback_data: data_string)
         end
       end
       date_list
